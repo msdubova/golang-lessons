@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 )
@@ -39,5 +40,22 @@ func TestAverage(t *testing.T) {
 				t.Fatalf("Got unexpected result: %v. Want: %v", actualOutput, test.expectedOutput)
 			}
 		})
+	}
+}
+
+func TestWriteAverage(t *testing.T) {
+	elements := []int{1, 2, 3}
+	average := 2
+	expectedOutput := `{"average":2,"elements":[1,2,3]}`
+
+	var buff = &bytes.Buffer{}
+
+	err := WriteAverage(buff, elements, average)
+	if err != nil {
+		t.Fatalf("Got unexpected error: %v", err)
+	}
+
+	if out := buff.String(); out != expectedOutput {
+		t.Fatalf("Got unexpected output: %v", out)
 	}
 }

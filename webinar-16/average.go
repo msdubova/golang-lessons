@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"io"
 )
 
 func Average(elems []int) int {
@@ -19,7 +19,7 @@ func Average(elems []int) int {
 	return sum / len(elems)
 }
 
-func WriteAverageToFile(elems []int, average int) error {
+func WriteAverage(w io.Writer, elems []int, average int) error {
 	content := map[string]any{
 		"elements": elems,
 		"average":  average,
@@ -30,9 +30,9 @@ func WriteAverageToFile(elems []int, average int) error {
 		return fmt.Errorf("marshaling content: %w", err)
 	}
 
-	err = os.WriteFile("average.json", rawContent, os.ModePerm)
+	_, err = w.Write(rawContent)
 	if err != nil {
-		return fmt.Errorf("writing file: %w", err)
+		return fmt.Errorf("writing average: %w", err)
 	}
 
 	return nil
