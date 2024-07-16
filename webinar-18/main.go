@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"os"
 
 	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
@@ -13,7 +14,7 @@ func init() {
 }
 
 func main() {
-	storage, err := newStorage("postgres://admin:donotcrackplease@localhost:5432/university?sslmode=disable")
+	storage, err := newStorage(os.Getenv("POSTGRES_CONN_STR"))
 	if err != nil {
 		log.Fatal().Msgf("Creating storage: %v", err)
 	}

@@ -7,3 +7,9 @@ services:
       POSTGRES_PASSWORD: donotcrackplease
     ports:
       - "5432:5432"
+  api:
+    build: .
+    environment:
+      POSTGRES_CONN_STR: "postgres://admin:donotcrackplease@database/university?sslmode=disable"
+    depends_on:
+      - database
