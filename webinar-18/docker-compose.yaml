@@ -1,0 +1,9 @@
+services:
+  database:
+    image: postgres
+    environment:
+      POSTGRES_DB: university
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: donotcrackplease
+    ports:
+      - "5432:5432"
