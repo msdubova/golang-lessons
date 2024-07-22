@@ -2,7 +2,8 @@ package main
 
 import (
 	"context"
-	"time"
+	"encoding/json"
+	"net/http"
 
 	"github.com/rs/zerolog/log"
 	"github.com/segmentio/kafka-go"
@@ -13,31 +14,38 @@ const ordersTopic = "orders"
 func main() {
 	ctx := context.Background()
 
-	conn, err := kafka.DialLeader(ctx, "tcp", "localhost:9092", ordersTopic, 0)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to dial kafka")
+	service := &userService{
+		storage: newInMemUserStorage(),
 	}
-	defer conn.Close()
 
-	conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+	go func() {
+		http.ListenAndServe(":8080", newUserHandler(service))
+	}()
 
-	batch := conn.ReadBatch(10e3, 1e6) // fetch 10KB min, 1MB max
-	defer batch.Close()
-
-	var message kafka.Message
+	kafkaReader := kafka.NewReader(kafka.ReaderConfig{
+		Brokers: []string{"localhost:9092"},
+		Topic:   ordersTopic,
+	})
 
 	for {
-		message, err = batch.ReadMessage()
+		message, err := kafkaReader.ReadMessage(ctx)
 		if err != nil {
-			break
+			log.Fatal().Err(err).Msg("Failed to read message")
 		}
 
 		log.Info().
 			Str("msg", string(message.Value)).
 			Msg("Got message from kafka")
-	}
 
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to read batch message")
+		var e orderPaidEvent
+
+		if err := json.Unmarshal(message.Value, &e); err != nil {
+			log.Warn().Err(err).Msg("Failed to decode message")
+			continue
+		}
+
+		if err := service.ConsumeOrderPaidEvent(e); err != nil {
+			log.Warn().Err(err).Msg("Failed to consume")
+		}
 	}
 }

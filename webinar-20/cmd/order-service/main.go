@@ -19,7 +19,7 @@ func main() {
 	defer conn.Close()
 
 	_, err = conn.WriteMessages(
-		kafka.Message{Value: []byte("hello world!")}, // TODO: change to order info
+		kafka.Message{Value: []byte(`{"UserID": 1, "OrderID": 3}`)}, // TODO: change to order info
 	)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to write kafka messages")
