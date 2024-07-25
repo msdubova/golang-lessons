@@ -33,13 +33,40 @@ func (s *Storage) GetShortURLByID(ctx context.Context, id string) (*core.ShortUR
 
 func (s *Storage) CreateShortURL(ctx context.Context, shortURL core.ShortURL) error {
 	const q = `
-		INSERT INTO short_urls(id, original_url)
-		VALUES($1, $2)
+		INSERT INTO short_urls(id, original_url, user_id)
+		VALUES($1, $2, $3)
 	`
 
-	_, err := s.db.ExecContext(ctx, q, shortURL.ID, shortURL.OriginalURL)
+	_, err := s.db.ExecContext(ctx, q, shortURL.ID, shortURL.OriginalURL, shortURL.UserID)
 	if err != nil {
 		return fmt.Errorf("inserting short URL: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Storage) CreateUserAndShortURL(ctx context.Context, user core.User, shortURL core.ShortURL) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("starting tx: %w", err)
+	}
+
+	_, err = tx.Exec("INSERT INTO users(id, nickname, password) VALUES ($1, $2, $3)",
+		user.ID, user.Nickname, user.Password)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("inserting user: %w", err)
+	}
+
+	_, err = tx.Exec("INSERT INTO short_url(id, original_url, user_id) VALUES ($1, $2, $3)",
+		shortURL.ID, shortURL.OriginalURL, shortURL.UserID)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("inserting short URL: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commiting tx: %w", err)
 	}
 
 	return nil

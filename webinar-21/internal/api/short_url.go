@@ -12,16 +12,16 @@ import (
 
 type ShortURLService interface {
 	GetShortURLByID(ctx context.Context, id string) (*core.ShortURL, error)
-	CreateShortURL(ctx context.Context, url string) (*core.ShortURL, error)
+	CreateShortURL(ctx context.Context, user core.User, url string) (*core.ShortURL, error)
 }
 
 type ShortURL struct {
 	Service ShortURLService
 }
 
-func (h *ShortURL) RegisterRoutes(m *http.ServeMux) {
-	m.HandleFunc("GET /short_urls/{id}", h.GetShortURLByID)
-	m.HandleFunc("POST /short_urls", h.PostShortURL)
+func (h *ShortURL) RegisterRoutes(m *http.ServeMux, a *Auth) {
+	m.HandleFunc("GET /short_urls/{id}", a.CheckAuth(h.GetShortURLByID))
+	m.HandleFunc("POST /short_urls", a.CheckAuth(h.PostShortURL))
 }
 
 func (h *ShortURL) GetShortURLByID(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +61,9 @@ func (h *ShortURL) PostShortURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shortURL, err := h.Service.CreateShortURL(r.Context(), reqBody.URL)
+	user := r.Context().Value("user").(core.User)
+
+	shortURL, err := h.Service.CreateShortURL(r.Context(), user, reqBody.URL)
 	if err != nil {
 		if errors.Is(err, core.ErrInvalidURL) {
 			w.WriteHeader(http.StatusBadRequest)

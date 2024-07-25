@@ -12,6 +12,7 @@ import (
 type ShortURL struct {
 	ID          string
 	OriginalURL string
+	UserID      int
 }
 
 type ShortURLStorage interface {
@@ -46,7 +47,7 @@ var (
 	ErrURLNotFound = errors.New("URL not found")
 )
 
-func (s *ShortURLService) CreateShortURL(ctx context.Context, rawURL string) (*ShortURL, error) {
+func (s *ShortURLService) CreateShortURL(ctx context.Context, user User, rawURL string) (*ShortURL, error) {
 	if _, err := url.Parse(rawURL); err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrInvalidURL, rawURL)
 	}
@@ -54,6 +55,7 @@ func (s *ShortURLService) CreateShortURL(ctx context.Context, rawURL string) (*S
 	shortURL := ShortURL{
 		ID:          uuid.NewString(),
 		OriginalURL: rawURL,
+		UserID:      user.ID,
 	}
 
 	err := s.Storage.CreateShortURL(ctx, shortURL)
