@@ -1,0 +1,18 @@
+services:
+  api:
+    build: .
+    depends_on:
+      - database
+    environment:
+      - ADDR=:8080
+      - POSTGRES_CONN_STR=postgres://admin:donotcrackplease@database/db?sslmode=disable
+    ports:
+      - 8080:8080
+  database:
+    image: postgres
+    environment:
+      POSTGRES_DB: db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: donotcrackplease
+    ports:
+      - "5432:5432"
